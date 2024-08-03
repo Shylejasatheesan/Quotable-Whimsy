@@ -1,0 +1,266 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+// Define a structure for linked list node
+typedef struct QuoteNode {
+    char *text;
+    struct QuoteNode *next;
+} QuoteNode;
+
+// ANSI color codes and text formatting
+#define RESET_COLOR "\033[0m"
+#define BOLD_TEXT "\033[1m"
+#define UNDERLINED_TEXT "\033[4m"
+
+// Arrays of quotes for each category
+const char* motivational_quotes[] = {
+    "The only way to do great work is to love what you do. – Steve Jobs",
+    "Believe you can and you're halfway there. – Theodore Roosevelt",
+    "Your time is limited, don't waste it living someone else's life. – Steve Jobs"
+};
+
+const char* humorous_quotes[] = {
+    "I'm not arguing, I'm just explaining why I'm right.",
+    "I can resist everything except temptation. – Oscar Wilde",
+    "Life is short. Smile while you still have teeth."
+};
+
+const char* wisdom_quotes[] = {
+    "The best way to predict the future is to invent it. – Alan Kay",
+    "The only true wisdom is in knowing you know nothing. – Socrates",
+    "Turn your wounds into wisdom. – Oprah Winfrey"
+};
+
+// Function to create a new quote node
+QuoteNode* createQuoteNode(const char *text) {
+    QuoteNode *newNode = (QuoteNode*)malloc(sizeof(QuoteNode));
+    if (!newNode) {
+        printf("Memory allocation failed\n");
+        exit(1);
+    }
+    newNode->text = (char*)malloc((strlen(text) + 1) * sizeof(char));
+    if (!newNode->text) {
+        printf("Memory allocation failed\n");
+        exit(1);
+    }
+    strcpy(newNode->text, text);
+    newNode->next = NULL;
+    return newNode;
+}
+
+// Function to add a new quote to the linked list
+void addQuote(QuoteNode **head, const char *text) {
+    QuoteNode *newNode = createQuoteNode(text);
+    newNode->next = *head;
+    *head = newNode;
+}
+
+// Function to display a random quote from the linked list
+void displayRandomQuote(QuoteNode *head) {
+    if (!head) {
+        printf("No quotes available.\n");
+        return;
+    }
+
+    int count = 0;
+    QuoteNode *temp = head;
+    while (temp) {
+        count++;
+        temp = temp->next;
+    }
+
+    int randomIndex = rand() % count;
+    temp = head;
+    for (int i = 0; i < randomIndex; i++) {
+        temp = temp->next;
+    }
+
+    printf(BOLD_TEXT "Random Quote: %s\n" RESET_COLOR, temp->text);
+}
+
+// Function to display all quotes in the linked list
+void displayAllQuotes(QuoteNode *head) {
+    if (!head) {
+        printf("No quotes available.\n");
+        return;
+    }
+
+    printf(BOLD_TEXT "All Quotes:\n" RESET_COLOR);
+    QuoteNode *temp = head;
+    int index = 1;
+    while (temp) {
+        printf(UNDERLINED_TEXT "%d: %s\n" RESET_COLOR, index++, temp->text);
+        temp = temp->next;
+    }
+}
+
+// Function to remove a quote by index from the linked list
+void removeQuote(QuoteNode **head, int index) {
+    if (!head || !(*head)) {
+        printf("No quotes available.\n");
+        return;
+    }
+
+    QuoteNode *temp = *head;
+    if (index == 0) {
+        *head = temp->next;
+        free(temp->text);
+        free(temp);
+        return;
+    }
+
+    for (int i = 0; temp != NULL && i < index - 1; i++) {
+        temp = temp->next;
+    }
+
+    if (!temp || !temp->next) {
+        printf("Invalid index.\n");
+        return;
+    }
+
+    QuoteNode *next = temp->next->next;
+    free(temp->next->text);
+    free(temp->next);
+    temp->next = next;
+}
+
+// Function to update a quote by index in the linked list
+void updateQuote(QuoteNode *head, int index, const char *newQuote) {
+    if (!head) {
+        printf("No quotes available.\n");
+        return;
+    }
+
+    QuoteNode *temp = head;
+    for (int i = 0; temp != NULL && i < index; i++) {
+        temp = temp->next;
+    }
+
+    if (!temp) {
+        printf("Invalid index.\n");
+        return;
+    }
+
+    free(temp->text);
+    temp->text = (char*)malloc((strlen(newQuote) + 1) * sizeof(char));
+    if (!temp->text) {
+        printf("Memory allocation failed\n");
+        exit(1);
+    }
+    strcpy(temp->text, newQuote);
+}
+
+// Function to display a random quote from a static category
+void displayRandomQuoteFromCategory(const char* quotes[], int size) {
+    if (size == 0) {
+        printf("No quotes available in this category.\n");
+        return;
+    }
+    int randomIndex = rand() % size;
+    printf(BOLD_TEXT "Random Quote: %s\n" RESET_COLOR, quotes[randomIndex]);
+}
+
+// Function to free allocated memory for linked list
+void freeQuotes(QuoteNode *head) {
+    QuoteNode *temp;
+    while (head) {
+        temp = head;
+        head = head->next;
+        free(temp->text);
+        free(temp);
+    }
+}
+
+// Function to display the menu and get user choice
+int displayMenu() {
+    int choice;
+    printf(BOLD_TEXT "Menu:\n" RESET_COLOR);
+    printf("1. Add a new quote\n");
+    printf("2. Display a random quote from dynamic collection\n");
+    printf("3. Display all quotes from dynamic collection\n");
+    printf("4. Remove a quote from dynamic collection\n");
+    printf("5. Update a quote in dynamic collection\n");
+    printf("6. Display a random motivational quote\n");
+    printf("7. Display a random humorous quote\n");
+    printf("8. Display a random wisdom quote\n");
+    printf("9. Exit\n");
+    printf("Enter your choice: ");
+    scanf("%d", &choice);
+    getchar();  // Consume newline character left in the input buffer
+    return choice;
+}
+
+int main() {
+    // Initialize the linked list
+    QuoteNode *quotes = NULL;
+
+    // Seed the random number generator
+    srand(time(NULL));
+
+    int choice;
+    char newQuote[256];
+    int index;
+
+    while (1) {
+        choice = displayMenu();
+
+        switch (choice) {
+            case 1:
+                printf("Enter the new quote: ");
+                fgets(newQuote, sizeof(newQuote), stdin);
+                newQuote[strcspn(newQuote, "\n")] = '\0';  // Remove the newline character
+                addQuote(&quotes, newQuote);
+                break;
+
+            case 2:
+                displayRandomQuote(quotes);
+                break;
+
+            case 3:
+                displayAllQuotes(quotes);
+                break;
+
+            case 4:
+                printf("Enter the index of the quote to remove: ");
+                scanf("%d", &index);
+                getchar();  // Consume newline character left in the input buffer
+                removeQuote(&quotes, index - 1);
+                break;
+
+            case 5:
+                printf("Enter the index of the quote to update: ");
+                scanf("%d", &index);
+                getchar();  // Consume newline character left in the input buffer
+                printf("Enter the new quote: ");
+                fgets(newQuote, sizeof(newQuote), stdin);
+                newQuote[strcspn(newQuote, "\n")] = '\0';  // Remove the newline character
+                updateQuote(quotes, index - 1, newQuote);
+                break;
+
+            case 6:
+                displayRandomQuoteFromCategory(motivational_quotes, sizeof(motivational_quotes) / sizeof(motivational_quotes[0]));
+                break;
+
+            case 7:
+                displayRandomQuoteFromCategory(humorous_quotes, sizeof(humorous_quotes) / sizeof(humorous_quotes[0]));
+                break;
+
+            case 8:
+                displayRandomQuoteFromCategory(wisdom_quotes, sizeof(wisdom_quotes) / sizeof(wisdom_quotes[0]));
+                break;
+
+            case 9:
+                freeQuotes(quotes);
+                printf("Exiting the program.\n");
+                return 0;
+
+            default:
+                printf("Invalid choice. Please try again.\n");
+                break;
+        }
+    }
+
+    return 0;
+}
